@@ -6,9 +6,6 @@ import javax.swing.JFrame;
 
 public class Crystal2D {
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Crystal 2D");
 		Crystal2D c = new Crystal2D();
