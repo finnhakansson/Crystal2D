@@ -32,5 +32,10 @@ public class Crystal2D {
 			this.x = sizeX;
 			this.y = sizeY;
 		}
+		boolean insideCircle() {
+			// From http://stackoverflow.com/questions/481144/equation-for-testing-if-a-point-is-inside-a-circle
+			// (x-center_x)^2 + (y - center_y)^2 < radius^2
+			return true;
+		}
 	}
 }
