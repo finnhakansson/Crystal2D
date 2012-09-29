@@ -24,10 +24,16 @@ public class Crystal2D {
 			double randomY = Math.sin(angle) * dropRadius + 150;
 			int x = (int)Math.round(randomX);
 			int y = (int)Math.round(randomY);
-			while (!crystal.attached(x, y)) {
-				//
+			while (!crystal.attached(x, y) && crystal.insideCircle(x, y)) {
+				x = Crystal2D.getNewLocation(x);
+				y = Crystal2D.getNewLocation(y);
 			}
+			cp.repaint();
 		}
+	}
+
+	private static int getNewLocation(int location) {
+		return location + ((int)Math.floor(Math.random() * 3) - 1);
 	}
 
 	class CrystalPane extends JComponent {
