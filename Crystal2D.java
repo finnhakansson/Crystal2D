@@ -17,10 +17,17 @@ public class Crystal2D {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(300, 300 + 22);
 		frame.setVisible(true);
-		int x = 0;
-		int y = 0;
-		//while () {
-		//}
+		double dropRadius = 300 / 2 - 1;
+		while (true) {
+			double angle = Math.random() * 2 * Math.PI;
+			double randomX = Math.cos(angle) * dropRadius + 150;
+			double randomY = Math.sin(angle) * dropRadius + 150;
+			int x = (int)Math.round(randomX);
+			int y = (int)Math.round(randomY);
+			while (!crystal.attached(x, y)) {
+				//
+			}
+		}
 	}
 
 	class CrystalPane extends JComponent {
@@ -52,10 +59,14 @@ public class Crystal2D {
 		private boolean matrix[][];
 		private int x;
 		private int y;
+		private int middleX;
+		private int middleY;
 
 		public Crystal(int sizeX, int sizeY) {
 			this.x = sizeX;
 			this.y = sizeY;
+			this.middleX = this.x / 2;
+			this.middleY = this.y / 2;
 			this.matrix = new boolean[this.y][this.x];
 			int x, y;
 			for (y = 0; y < this.y; y++) {
@@ -64,16 +75,11 @@ public class Crystal2D {
 				}
 			}
 		}
-		
+
 		public void initCrystalOneAtomMiddle() {
-			int middle_x = this.x / 2;
-			int middle_y = this.y / 2;
-			this.matrix[middle_y][middle_x] = true;
-			System.out.println("initCrystalOneAtomMiddle");
-			System.out.println(middle_y);
-			System.out.println(middle_x);
+			this.matrix[this.middleY][this.middleX] = true;
 		}
-		
+
 		public boolean attached(int xLocation, int yLocation) {
 			int xBegin = xLocation - 1;
 			int yBegin = yLocation - 1;
@@ -105,7 +111,7 @@ public class Crystal2D {
 		public boolean insideCircle(int x, int y) {
 			// From http://stackoverflow.com/questions/481144/equation-for-testing-if-a-point-is-inside-a-circle
 			// (x-center_x)^2 + (y - center_y)^2 < radius^2
-			return true;
+			return Math.sqrt((double)(x - this.middleX)) + Math.sqrt((double)(y - this.middleY)) < this.x * this.x; 
 		}
 
 		public boolean[][] getMatrix() {
