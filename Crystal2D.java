@@ -1,4 +1,12 @@
 
+//
+// TODO:
+//
+// Rim can start small. Or the drop point can be closer to the crystal.
+// Optimize the drawing. Is it possible to render only a small part of the pane?
+// Threads? Many concurrent particles?
+//
+
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.JComponent;
@@ -7,7 +15,7 @@ import javax.swing.JFrame;
 public class Crystal2D {
 	private static boolean DEBUG = true;
 	private static int TITLE_HEIGHT = 22;
-	private static int CRYSTAL_RADIUS = 150;
+	private static int CRYSTAL_RADIUS = 15;
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Crystal 2D");
@@ -28,6 +36,17 @@ public class Crystal2D {
 		while (!crystalTouchingRim) {
 			Particle p = c.new Particle();
 			boolean attached = false;
+			if (DEBUG) {
+				cp.setParticle(p);
+				cp.repaint();
+				System.out.println(p.getX());
+				System.out.println(p.getY());
+				try {
+					Thread.currentThread().sleep(30000);
+				} catch (InterruptedException ie) {
+					//
+				}
+			}
 			while (!(attached = crystal.attached(p)) && crystal.insideCircle(p)) {
 				p.move();
 				if (DEBUG) {
@@ -64,14 +83,6 @@ public class Crystal2D {
 		}
 
 		public void paintComponent(Graphics g) {
-			if (DEBUG) {
-				g.setColor(Color.RED);
-				if (this.p != (Particle)null) {
-					g.fillArc(this.p.getX() - 2, this.p.getY() - 2, 4, 4, 0, 360);
-					//g.drawLine(this.p.getX(), this.p.getY(), this.p.getX(), this.p.getY());
-				}
-				g.setColor(Color.BLACK);
-			}
 			g.drawArc(0, 0, this.side - 1, this.side - 1, 0, 360);
 			for (int y = 0; y < this.side; y++) {
 				for (int x = 0; x < this.side; x++) {
@@ -79,6 +90,14 @@ public class Crystal2D {
 						g.drawLine(x, y, x, y);
 					}
 				}
+			}
+			if (DEBUG) {
+				g.setColor(Color.RED);
+				if (this.p != (Particle)null) {
+					//g.fillArc(this.p.getX() - 2, this.p.getY() - 2, 4, 4, 0, 360);
+					g.drawLine(this.p.getX(), this.p.getY(), this.p.getX(), this.p.getY());
+				}
+				g.setColor(Color.BLACK);
 			}
 		}
 		
@@ -146,17 +165,15 @@ public class Crystal2D {
 		}
 
 		public boolean insideCircle(Crystal2D.Particle p) {
-			int x = p.getX();
-			int y = p.getY();
+			int x = p.getX() - this.middleX;
+			int y = p.getY() - this.middleY;
 			// From http://stackoverflow.com/questions/481144/equation-for-testing-if-a-point-is-inside-a-circle
 			// (x - center_x)^2 + (y - center_y)^2 < radius^2
-			//return Math.sqrt((double)(x - this.middleX)) + Math.sqrt((double)(y - this.middleY)) < (double)(this.radius * this.radius);
-			return (x - this.middleX) * (x - this.middleX) + (y - this.middleY) * (y - this.middleY) < (this.radius * this.radius);
+			return x * x + y * y < (this.radius * this.radius);
 		}
 		
 		public boolean onRim(Crystal2D.Particle p) {
 			return !this.insideCircle(p);
-			//return false;
 		}
 
 		public boolean[][] getMatrix() {
@@ -186,8 +203,8 @@ public class Crystal2D {
 		}
 		
 		public void move() {
-			this.x = getNewLocation(this.x);
-			this.y = getNewLocation(this.y);
+			this.x = this.getNewLocation(this.x);
+			this.y = this.getNewLocation(this.y);
 		}
 		
 		private int getNewLocation(int position) {
