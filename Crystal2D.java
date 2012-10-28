@@ -5,6 +5,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 
 public class Crystal2D {
+	private static boolean DEBUG = true;
 	private static int TITLE_HEIGHT = 22;
 	private static int CRYSTAL_RADIUS = 150;
 
@@ -13,7 +14,7 @@ public class Crystal2D {
 		Crystal2D c = new Crystal2D();
 		Crystal crystal = c.new Crystal(CRYSTAL_RADIUS);
 		crystal.initCrystalOneAtomMiddle();
-		CrystalPane cp = c.new CrystalPane("Bajs");
+		CrystalPane cp = c.new CrystalPane(CRYSTAL_RADIUS * 2);
 		cp.setMatrix(crystal.getMatrix());
 		frame.getContentPane().add(cp);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -29,7 +30,17 @@ public class Crystal2D {
 			boolean attached = false;
 			while (!(attached = crystal.attached(p)) && crystal.insideCircle(p)) {
 				p.move();
+				if (DEBUG) {
+					cp.setParticle(p);
+					try {
+						Thread.currentThread().sleep(1);
+					} catch (InterruptedException ie) {
+						//
+					}
+					cp.repaint();
+				}
 			}
+			cp.setParticle((Particle)null);
 			cp.repaint();
 			if (attached) {
 				crystalTouchingRim = crystal.onRim(p);
@@ -37,15 +48,15 @@ public class Crystal2D {
 		}
 	}
 
-	private static int getNewLocation(int location) {
-		return location + ((int)Math.floor(Math.random() * 3) - 1);
-	}
-
 	class CrystalPane extends JComponent {
 		private static final long serialVersionUID = 1L;
+		private int side;
 		private boolean[][] matrix;
+		private Particle p;
 
-		public CrystalPane(String x) {
+		public CrystalPane(int side) {
+			this.side = side;
+			this.p = (Particle)null;
 		}
 		
 		public void setMatrix(boolean[][] matrix) {
@@ -53,15 +64,26 @@ public class Crystal2D {
 		}
 
 		public void paintComponent(Graphics g) {
-			//g.drawString("APA", 100, 100);
-			g.drawArc(0, 0, 299, 299, 0, 360);
-			for (int y = 0; y < 300; y++) {
-				for (int x = 0; x < 300; x++) {
+			if (DEBUG) {
+				g.setColor(Color.RED);
+				if (this.p != (Particle)null) {
+					g.fillArc(this.p.getX() - 2, this.p.getY() - 2, 4, 4, 0, 360);
+					//g.drawLine(this.p.getX(), this.p.getY(), this.p.getX(), this.p.getY());
+				}
+				g.setColor(Color.BLACK);
+			}
+			g.drawArc(0, 0, this.side - 1, this.side - 1, 0, 360);
+			for (int y = 0; y < this.side; y++) {
+				for (int x = 0; x < this.side; x++) {
 					if (this.matrix[y][x]) {
 						g.drawLine(x, y, x, y);
 					}
 				}
 			}
+		}
+		
+		public void setParticle(Particle p) {
+			this.p = p;
 		}
 	}
 
@@ -100,11 +122,11 @@ public class Crystal2D {
 			int yBegin = yPos - 1;
 			int xEnd = xPos + 1;
 			int yEnd = yPos + 1;
-			if (xBegin < 0) {
-				xBegin = 0;
+			if (xBegin < 1) {
+				xBegin = 1;
 			}
-			if (yBegin < 0) {
-				yBegin = 0;
+			if (yBegin < 1) {
+				yBegin = 1;
 			}
 			if (xEnd >= this.width) {
 				xEnd = this.width - 1;
@@ -127,8 +149,9 @@ public class Crystal2D {
 			int x = p.getX();
 			int y = p.getY();
 			// From http://stackoverflow.com/questions/481144/equation-for-testing-if-a-point-is-inside-a-circle
-			// (x-center_x)^2 + (y - center_y)^2 < radius^2
-			return Math.sqrt((double)(x - this.middleX)) + Math.sqrt((double)(y - this.middleY)) < this.radius * this.radius; 
+			// (x - center_x)^2 + (y - center_y)^2 < radius^2
+			//return Math.sqrt((double)(x - this.middleX)) + Math.sqrt((double)(y - this.middleY)) < (double)(this.radius * this.radius);
+			return (x - this.middleX) * (x - this.middleX) + (y - this.middleY) * (y - this.middleY) < (this.radius * this.radius);
 		}
 		
 		public boolean onRim(Crystal2D.Particle p) {
