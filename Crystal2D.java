@@ -15,18 +15,18 @@ import javax.swing.JFrame;
 public class Crystal2D {
 	private static boolean DEBUG = true;
 	private static int TITLE_HEIGHT = 22;
-	private static int CRYSTAL_RADIUS = 15;
+	private static int RIM_RADIUS = 50;
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Crystal 2D");
 		Crystal2D c = new Crystal2D();
-		Crystal crystal = c.new Crystal(CRYSTAL_RADIUS);
+		Crystal crystal = c.new Crystal(RIM_RADIUS);
 		crystal.initCrystalOneAtomMiddle();
-		CrystalPane cp = c.new CrystalPane(CRYSTAL_RADIUS * 2);
+		CrystalPane cp = c.new CrystalPane(RIM_RADIUS * 2);
 		cp.setMatrix(crystal.getMatrix());
 		frame.getContentPane().add(cp);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setSize(CRYSTAL_RADIUS * 2, CRYSTAL_RADIUS * 2 + TITLE_HEIGHT);
+		frame.setSize(RIM_RADIUS * 2, RIM_RADIUS * 2 + TITLE_HEIGHT);
 		frame.setVisible(true);
 		// TODO: Three problems:
 		// The crystal doesn't stop to grow at the rim.
@@ -34,15 +34,13 @@ public class Crystal2D {
 		// It would be useful to visually inspect the random paths of the particles.
 		boolean crystalTouchingRim = false;
 		while (!crystalTouchingRim) {
-			Particle p = c.new Particle();
+			Particle p = c.new Particle(RIM_RADIUS);
 			boolean attached = false;
 			if (DEBUG) {
 				cp.setParticle(p);
 				cp.repaint();
-				System.out.println(p.getX());
-				System.out.println(p.getY());
 				try {
-					Thread.currentThread().sleep(30000);
+					Thread.currentThread().sleep(30);
 				} catch (InterruptedException ie) {
 					//
 				}
@@ -83,7 +81,9 @@ public class Crystal2D {
 		}
 
 		public void paintComponent(Graphics g) {
+			g.setColor(Color.BLACK);
 			g.drawArc(0, 0, this.side - 1, this.side - 1, 0, 360);
+			g.setColor(Color.GREEN);
 			for (int y = 0; y < this.side; y++) {
 				for (int x = 0; x < this.side; x++) {
 					if (this.matrix[y][x]) {
@@ -185,11 +185,11 @@ public class Crystal2D {
 		private int x;
 		private int y;
 		
-		public Particle() {
+		public Particle(int radius) {
 			// Generate an angle between 0 and 2 PI.
 			double angle = Math.random() * 2 * Math.PI;
-			double randomX = Math.cos(angle) * (CRYSTAL_RADIUS - 1) + CRYSTAL_RADIUS;
-			double randomY = Math.sin(angle) * (CRYSTAL_RADIUS - 1) + CRYSTAL_RADIUS;
+			double randomX = Math.cos(angle) * (radius - 1) + radius;
+			double randomY = Math.sin(angle) * (radius - 1) + radius;
 			this.x = (int)randomX;
 			this.y = (int)randomY;
 		}
