@@ -15,7 +15,7 @@ import javax.swing.JFrame;
 public class Crystal2D {
 	private static boolean DEBUG = true;
 	private static int TITLE_HEIGHT = 22;
-	private static int RIM_RADIUS = 50;
+	private static int RIM_RADIUS = 30;
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Crystal 2D");
@@ -40,12 +40,12 @@ public class Crystal2D {
 				cp.setParticle(p);
 				cp.repaint();
 				try {
-					Thread.currentThread().sleep(30);
+					Thread.currentThread().sleep(1);
 				} catch (InterruptedException ie) {
 					//
 				}
 			}
-			while (!(attached = crystal.attached(p)) && crystal.insideCircle(p)) {
+			while (!(attached = crystal.attached(p)) && crystal.insideRim(p)) {
 				p.move();
 				if (DEBUG) {
 					cp.setParticle(p);
@@ -164,16 +164,17 @@ public class Crystal2D {
 			return false;
 		}
 
-		public boolean insideCircle(Crystal2D.Particle p) {
+		public boolean insideRim(Crystal2D.Particle p) {
 			int x = p.getX() - this.middleX;
 			int y = p.getY() - this.middleY;
+			int r = this.radius - 1;
 			// From http://stackoverflow.com/questions/481144/equation-for-testing-if-a-point-is-inside-a-circle
 			// (x - center_x)^2 + (y - center_y)^2 < radius^2
-			return x * x + y * y < (this.radius * this.radius);
+			return x * x + y * y < r * r;
 		}
 		
 		public boolean onRim(Crystal2D.Particle p) {
-			return !this.insideCircle(p);
+			return !this.insideRim(p);
 		}
 
 		public boolean[][] getMatrix() {
@@ -188,8 +189,8 @@ public class Crystal2D {
 		public Particle(int radius) {
 			// Generate an angle between 0 and 2 PI.
 			double angle = Math.random() * 2 * Math.PI;
-			double randomX = Math.cos(angle) * (radius - 1) + radius;
-			double randomY = Math.sin(angle) * (radius - 1) + radius;
+			double randomX = Math.cos(angle) * (radius - 1) + (radius - 1); // TODO: Bug here.
+			double randomY = Math.sin(angle) * (radius - 1) + (radius - 1);
 			this.x = (int)randomX;
 			this.y = (int)randomY;
 		}
