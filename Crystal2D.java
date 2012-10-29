@@ -5,6 +5,7 @@
 // Rim can start small. Or the drop point can be closer to the crystal.
 // Optimize the drawing. Is it possible to render only a small part of the pane?
 // Threads? Many concurrent particles?
+// Draw more than one point at once with drawLine().
 //
 
 import java.awt.*;
@@ -13,9 +14,9 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 
 public class Crystal2D {
-	private static boolean DEBUG = true;
-	private static int TITLE_HEIGHT = 22;
-	private static int RIM_RADIUS = 30;
+	private final static boolean DEBUG = true;
+	private final static int TITLE_HEIGHT = 22;
+	private final static int RIM_RADIUS = 10;
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Crystal 2D");
@@ -28,6 +29,18 @@ public class Crystal2D {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(RIM_RADIUS * 2, RIM_RADIUS * 2 + TITLE_HEIGHT);
 		frame.setVisible(true);
+		if (DEBUG) {
+			int i;
+			int bad = 0;
+			for (i = 0; i < 100; i++) {
+				if (!crystal.insideRim(c.new Particle(RIM_RADIUS))) {
+					//System.out.println("Particle not good!");
+					bad++;
+				}
+			}
+			System.out.println(bad);
+			//System.exit(0);
+		}
 		// TODO: Three problems:
 		// The crystal doesn't stop to grow at the rim.
 		// The particles are not evenly distributed on the rim.
@@ -59,9 +72,7 @@ public class Crystal2D {
 			}
 			cp.setParticle((Particle)null);
 			cp.repaint();
-			if (attached) {
-				crystalTouchingRim = crystal.onRim(p);
-			}
+			crystalTouchingRim = attached && !crystal.insideRim(p);
 		}
 	}
 
@@ -185,16 +196,18 @@ public class Crystal2D {
 	class Particle {
 		private int x;
 		private int y;
-		
+		private final int[][] positions = {
+			{-1,  1}, {0,  1}, {1,  1},
+			{-1,  0},          {1,  0},
+			{-1, -1}, {0, -1}, {1, -1}
+		};
+
 		public Particle(int radius) {
-			// Generate an angle between 0 and 2 PI.
-			double angle = Math.random() * 2 * Math.PI;
-			double randomX = Math.cos(angle) * (radius - 1) + (radius - 1); // TODO: Bug here.
-			double randomY = Math.sin(angle) * (radius - 1) + (radius - 1);
-			this.x = (int)randomX;
-			this.y = (int)randomY;
+			double angle = Math.random() * 2 * Math.PI; // Angle between 0 and 2 PI.
+			this.x = (int)(Math.cos(angle) * (radius - 1)) + radius;
+			this.y = (int)(Math.sin(angle) * (radius - 1)) + radius;
 		}
-		
+
 		public int getX() {
 			return this.x;
 		}
@@ -204,13 +217,11 @@ public class Crystal2D {
 		}
 		
 		public void move() {
-			this.x = this.getNewLocation(this.x);
-			this.y = this.getNewLocation(this.y);
+			int index = (int)Math.floor(Math.random() * this.positions.length);
+			this.x += this.positions[index][0];
+			this.y += this.positions[index][1];
 		}
-		
-		private int getNewLocation(int position) {
-			return position + ((int)Math.floor(Math.random() * 3) - 1);
-		}
+
 	}
 }
 
