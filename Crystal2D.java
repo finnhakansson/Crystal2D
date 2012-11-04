@@ -17,7 +17,7 @@ import javax.swing.JFrame;
 public class Crystal2D {
 	private final static boolean DEBUG = false;
 	private final static int TITLE_HEIGHT = 22;
-	private final static int RIM_RADIUS = 100;
+	private final static int RIM_RADIUS = 500;
 	private final static int DROP_DISTANCE = 5;
 
 	public static void main(String[] args) {
@@ -31,22 +31,9 @@ public class Crystal2D {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(RIM_RADIUS * 2, RIM_RADIUS * 2 + TITLE_HEIGHT);
 		frame.setVisible(true);
-		if (DEBUG) {
-			int i;
-			int bad = 0;
-			for (i = 0; i < 100; i++) {
-				if (!crystal.insideRim(c.new Particle(RIM_RADIUS))) {
-					//System.out.println("Particle not good!");
-					bad++;
-				}
-			}
-			System.out.println(bad);
-			//System.exit(0);
-		}
-		// TODO: Three problems:
+		// TODO: Two problems:
 		// The crystal doesn't stop to grow at the rim.
 		// The particles are not evenly distributed on the rim.
-		// It would be useful to visually inspect the random paths of the particles.
 		boolean crystalTouchingRim = false;
 		while (!crystalTouchingRim) {
 			Particle p = c.new Particle(crystal.getDropRadius());
@@ -60,7 +47,7 @@ public class Crystal2D {
 					//
 				}
 			}
-			while (!(attached = crystal.near(p)) && crystal.insideRim(p)) {
+			while (!(attached = crystal.near(p)) && crystal.insideSlidingRim(p)) {
 				p.move();
 				if (DEBUG) {
 					cp.setParticle(p);
@@ -200,8 +187,11 @@ public class Crystal2D {
 			return x * x + y * y < r * r;
 		}
 		
-		public boolean onRim(Crystal2D.Particle p) {
-			return !this.insideRim(p);
+		public boolean insideSlidingRim(Crystal2D.Particle p) {
+			int x = p.getX() - this.middleX;
+			int y = p.getY() - this.middleY;
+			int r = Math.min(this.currentRadius + DROP_DISTANCE, this.radius - 1);
+			return x * x + y * y < r * r;
 		}
 
 		public boolean[][] getMatrix() {
