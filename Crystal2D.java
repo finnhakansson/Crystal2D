@@ -8,7 +8,6 @@
 // Export to BMP file.
 // Only repaint after every 100 particles. Grow exponentially.
 // Statistics.
-// Change colors of the crystal.
 //
 
 import java.awt.*;
@@ -31,6 +30,7 @@ public class Crystal2D {
 		CrystalPane cp = c.new CrystalPane(RIM_RADIUS * 2);
 		cp.setMatrix(crystal.getMatrix());
 		frame.getContentPane().add(cp);
+		frame.getContentPane().setBackground(Color.BLACK);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(RIM_RADIUS * 2, RIM_RADIUS * 2 + TITLE_HEIGHT);
 		frame.setVisible(true);
@@ -75,10 +75,14 @@ public class Crystal2D {
 		private int side;
 		private boolean[][] matrix;
 		private Particle p;
+		private Color color;
+		private Color antiAliasColor;
 
 		public CrystalPane(int side) {
 			this.side = side;
 			this.p = (Particle)null;
+			this.color = new Color(0.8f, 0.8f, 0.1f, 1.0f);
+			this.antiAliasColor = new Color(0.1f, 0.1f, 0.02f, 1.0f);
 		}
 		
 		public void setMatrix(boolean[][] matrix) {
@@ -86,7 +90,7 @@ public class Crystal2D {
 		}
 
 		public void paintComponent(Graphics g) {
-			g.setColor(Color.BLACK);
+			g.setColor(this.color);
 			g.drawArc(0, 0, this.side - 1, this.side - 1, 0, 360);
 
 			for (int y = 0; y < this.side; y++) {
@@ -108,7 +112,8 @@ public class Crystal2D {
 
 			if (ENABLE_ANTI_ALIASING) {
 				// Apply anti-aliasing.
-				g.setColor(new Color(0.8f, 0.8f, 0.8f, 1.0f));
+				g.setColor(this.antiAliasColor);
+				//g.setColor(new Color(0.8f, 0.8f, 0.8f, 1.0f));
 				for (int y = 1; y < this.side; y++) {
 					for (int x = 1; x < this.side; x++) {
 						if (this.matrix[y][x]) {
