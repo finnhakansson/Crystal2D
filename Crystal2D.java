@@ -18,9 +18,10 @@ import javax.swing.JFrame;
 public class Crystal2D {
 	private final static boolean DEBUG = false;
 	private final static int TITLE_HEIGHT = 22;
-	private final static int RIM_RADIUS = 500;
+	private final static int RIM_RADIUS = 300;
 	private final static int DROP_DISTANCE = 5;
 	private final static boolean ENABLE_ANTI_ALIASING = true;
+	private final static boolean DRAW_RIM = false;
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Crystal 2D");
@@ -81,8 +82,8 @@ public class Crystal2D {
 		public CrystalPane(int side) {
 			this.side = side;
 			this.p = (Particle)null;
-			this.color = new Color(0.8f, 0.8f, 0.1f, 1.0f);
-			this.antiAliasColor = new Color(0.1f, 0.1f, 0.02f, 1.0f);
+			this.color = new Color(0.9f, 0.9f, 0.1f, 1.0f);
+			this.antiAliasColor = new Color(0.1f, 0.1f, 0.01f, 1.0f);
 		}
 		
 		public void setMatrix(boolean[][] matrix) {
@@ -91,7 +92,10 @@ public class Crystal2D {
 
 		public void paintComponent(Graphics g) {
 			g.setColor(this.color);
-			g.drawArc(0, 0, this.side - 1, this.side - 1, 0, 360);
+
+			if (DRAW_RIM) {
+				g.drawArc(0, 0, this.side - 1, this.side - 1, 0, 360);
+			}
 
 			for (int y = 0; y < this.side; y++) {
 				for (int x = 0; x < this.side; x++) {
@@ -104,7 +108,6 @@ public class Crystal2D {
 			if (DEBUG) {
 				g.setColor(Color.RED);
 				if (this.p != (Particle)null) {
-					//g.fillArc(this.p.getX() - 2, this.p.getY() - 2, 4, 4, 0, 360);
 					g.drawLine(this.p.getX(), this.p.getY(), this.p.getX(), this.p.getY());
 				}
 				g.setColor(Color.BLACK);
@@ -113,7 +116,6 @@ public class Crystal2D {
 			if (ENABLE_ANTI_ALIASING) {
 				// Apply anti-aliasing.
 				g.setColor(this.antiAliasColor);
-				//g.setColor(new Color(0.8f, 0.8f, 0.8f, 1.0f));
 				for (int y = 1; y < this.side; y++) {
 					for (int x = 1; x < this.side; x++) {
 						if (this.matrix[y][x]) {
@@ -172,6 +174,12 @@ public class Crystal2D {
 
 		public void initCrystalOneAtomMiddle() {
 			this.matrix[this.middleY][this.middleX] = true;
+
+			// Experiment with more points.
+			//this.matrix[this.middleY - 40][this.middleX - 40] = true;
+			//this.matrix[this.middleY - 40][this.middleX + 40] = true;
+			//this.matrix[this.middleY + 40][this.middleX - 40] = true;
+			//this.matrix[this.middleY + 40][this.middleX + 40] = true;
 		}
 
 		public boolean near(Crystal2D.Particle p) {
@@ -196,7 +204,6 @@ public class Crystal2D {
 			for (int y = yBegin; y <= yEnd; y++) {
 				for (int x = xBegin; x <= xEnd; x++) {
 					if (this.matrix[y][x]) {
-						//this.attach(p);
 						return true;
 					}
 				}
