@@ -6,6 +6,7 @@
 // Optimize the drawing. Is it possible to render only a small part of the pane?
 // Threads? Many concurrent particles?
 // Draw more than one point at once with drawLine().
+// Export to BMP file.
 //
 
 import java.awt.*;
@@ -14,9 +15,10 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 
 public class Crystal2D {
-	private final static boolean DEBUG = true;
+	private final static boolean DEBUG = false;
 	private final static int TITLE_HEIGHT = 22;
-	private final static int RIM_RADIUS = 10;
+	private final static int RIM_RADIUS = 100;
+	private final static int DROP_DISTANCE = 5;
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Crystal 2D");
@@ -47,7 +49,7 @@ public class Crystal2D {
 		// It would be useful to visually inspect the random paths of the particles.
 		boolean crystalTouchingRim = false;
 		while (!crystalTouchingRim) {
-			Particle p = c.new Particle(RIM_RADIUS);
+			Particle p = c.new Particle(crystal.getDropRadius());
 			boolean attached = false;
 			if (DEBUG) {
 				cp.setParticle(p);
@@ -58,7 +60,7 @@ public class Crystal2D {
 					//
 				}
 			}
-			while (!(attached = crystal.attached(p)) && crystal.insideRim(p)) {
+			while (!(attached = crystal.near(p)) && crystal.insideRim(p)) {
 				p.move();
 				if (DEBUG) {
 					cp.setParticle(p);
@@ -74,6 +76,8 @@ public class Crystal2D {
 			cp.repaint();
 			crystalTouchingRim = attached && !crystal.insideRim(p);
 		}
+
+		System.out.println("Done."); // TEST
 	}
 
 	class CrystalPane extends JComponent {
@@ -94,7 +98,7 @@ public class Crystal2D {
 		public void paintComponent(Graphics g) {
 			g.setColor(Color.BLACK);
 			g.drawArc(0, 0, this.side - 1, this.side - 1, 0, 360);
-			g.setColor(Color.GREEN);
+			//g.setColor(Color.GREEN);
 			for (int y = 0; y < this.side; y++) {
 				for (int x = 0; x < this.side; x++) {
 					if (this.matrix[y][x]) {
@@ -125,6 +129,7 @@ public class Crystal2D {
 		private int height;
 		private int middleX;
 		private int middleY;
+		private int currentRadius;
 
 		public Crystal(int radius) {
 			this.radius = radius;
@@ -139,13 +144,14 @@ public class Crystal2D {
 					this.matrix[y][x] = false;
 				}
 			}
+			this.currentRadius = 1;
 		}
 
 		public void initCrystalOneAtomMiddle() {
 			this.matrix[this.middleY][this.middleX] = true;
 		}
 
-		public boolean attached(Crystal2D.Particle p) {
+		public boolean near(Crystal2D.Particle p) {
 			int xPos = p.getX();
 			int yPos = p.getY();
 			int xBegin = xPos - 1;
@@ -167,12 +173,22 @@ public class Crystal2D {
 			for (int y = yBegin; y <= yEnd; y++) {
 				for (int x = xBegin; x <= xEnd; x++) {
 					if (this.matrix[y][x]) {
-						this.matrix[yPos][xPos] = true;
+						this.attach(p);
 						return true;
 					}
 				}
 			}
 			return false;
+		}
+		
+		public void attach(Crystal2D.Particle p) {
+			int xPos = p.getX();
+			int yPos = p.getY();
+			int radius = (int)Math.sqrt((xPos - this.middleX) * (xPos - this.middleX) + (yPos - this.middleY) * (yPos - this.middleY));
+			if (radius > this.currentRadius) {
+				this.currentRadius = radius;
+			}
+			this.matrix[yPos][xPos] = true;
 		}
 
 		public boolean insideRim(Crystal2D.Particle p) {
@@ -191,6 +207,10 @@ public class Crystal2D {
 		public boolean[][] getMatrix() {
 			return this.matrix;
 		}
+		
+		public int getDropRadius() {
+			return this.currentRadius + DROP_DISTANCE;
+		}
 	}
 	
 	class Particle {
@@ -204,8 +224,8 @@ public class Crystal2D {
 
 		public Particle(int radius) {
 			double angle = Math.random() * 2 * Math.PI; // Angle between 0 and 2 PI.
-			this.x = (int)(Math.cos(angle) * (radius - 1)) + radius;
-			this.y = (int)(Math.sin(angle) * (radius - 1)) + radius;
+			this.x = (int)(Math.cos(angle) * radius) + RIM_RADIUS;
+			this.y = (int)(Math.sin(angle) * radius) + RIM_RADIUS;
 		}
 
 		public int getX() {
