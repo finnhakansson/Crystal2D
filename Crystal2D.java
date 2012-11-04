@@ -7,6 +7,9 @@
 // Threads? Many concurrent particles?
 // Draw more than one point at once with drawLine().
 // Export to BMP file.
+// Only repaint after every 10 particles. Grow exponentially.
+// Anti-aliasing.
+// Statistics.
 //
 
 import java.awt.*;
@@ -17,7 +20,7 @@ import javax.swing.JFrame;
 public class Crystal2D {
 	private final static boolean DEBUG = false;
 	private final static int TITLE_HEIGHT = 22;
-	private final static int RIM_RADIUS = 500;
+	private final static int RIM_RADIUS = 200;
 	private final static int DROP_DISTANCE = 5;
 
 	public static void main(String[] args) {
@@ -31,13 +34,12 @@ public class Crystal2D {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(RIM_RADIUS * 2, RIM_RADIUS * 2 + TITLE_HEIGHT);
 		frame.setVisible(true);
-		// TODO: Two problems:
-		// The crystal doesn't stop to grow at the rim.
-		// The particles are not evenly distributed on the rim.
+
+		int repaintLimit = 100;
+		int numberOfParticles = 1;
 		boolean crystalTouchingRim = false;
 		while (!crystalTouchingRim) {
 			Particle p = c.new Particle(crystal.getDropRadius());
-			boolean attached = false;
 			if (DEBUG) {
 				cp.setParticle(p);
 				cp.repaint();
@@ -47,24 +49,25 @@ public class Crystal2D {
 					//
 				}
 			}
-			while (!(attached = crystal.near(p)) && crystal.insideSlidingRim(p)) {
+			boolean particleIsFree = true;
+			do {
 				p.move();
-				if (DEBUG) {
-					cp.setParticle(p);
-					try {
-						Thread.currentThread().sleep(1);
-					} catch (InterruptedException ie) {
-						//
+				if (!crystal.insideRim(p)) {
+					particleIsFree = false;
+				} else if (crystal.near(p)) {
+					crystal.attach(p);
+					numberOfParticles++;
+					if (numberOfParticles % repaintLimit == 0) {
+						cp.repaint();
 					}
-					cp.repaint();
+					crystalTouchingRim = crystal.onRim(p);
+					particleIsFree = false;
 				}
-			}
-			cp.setParticle((Particle)null);
-			cp.repaint();
-			crystalTouchingRim = attached && !crystal.insideRim(p);
+			} while (particleIsFree);
 		}
-
-		System.out.println("Done."); // TEST
+		cp.repaint();
+		System.out.println(numberOfParticles);
+		System.out.println("Done.");
 	}
 
 	class CrystalPane extends JComponent {
@@ -160,7 +163,7 @@ public class Crystal2D {
 			for (int y = yBegin; y <= yEnd; y++) {
 				for (int x = xBegin; x <= xEnd; x++) {
 					if (this.matrix[y][x]) {
-						this.attach(p);
+						//this.attach(p);
 						return true;
 					}
 				}
@@ -186,20 +189,18 @@ public class Crystal2D {
 			// (x - center_x)^2 + (y - center_y)^2 < radius^2
 			return x * x + y * y < r * r;
 		}
-		
-		public boolean insideSlidingRim(Crystal2D.Particle p) {
-			int x = p.getX() - this.middleX;
-			int y = p.getY() - this.middleY;
-			int r = Math.min(this.currentRadius + DROP_DISTANCE, this.radius - 1);
-			return x * x + y * y < r * r;
+
+		public boolean onRim(Crystal2D.Particle p) {
+			return this.currentRadius >= (this.radius - 2);
 		}
 
 		public boolean[][] getMatrix() {
 			return this.matrix;
 		}
-		
+
 		public int getDropRadius() {
-			return this.currentRadius + DROP_DISTANCE;
+			//System.out.print(this.currentRadius); System.out.print(" "); System.out.println(Math.min(this.currentRadius + DROP_DISTANCE, this.radius));
+			return Math.min(this.currentRadius + DROP_DISTANCE, this.radius);
 		}
 	}
 	
