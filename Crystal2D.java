@@ -2,14 +2,13 @@
 //
 // TODO:
 //
-// Rim can start small. Or the drop point can be closer to the crystal.
 // Optimize the drawing. Is it possible to render only a small part of the pane?
 // Threads? Many concurrent particles?
 // Draw more than one point at once with drawLine().
 // Export to BMP file.
-// Only repaint after every 10 particles. Grow exponentially.
-// Anti-aliasing.
+// Only repaint after every 100 particles. Grow exponentially.
 // Statistics.
+// Change colors of the crystal.
 //
 
 import java.awt.*;
@@ -20,8 +19,9 @@ import javax.swing.JFrame;
 public class Crystal2D {
 	private final static boolean DEBUG = false;
 	private final static int TITLE_HEIGHT = 22;
-	private final static int RIM_RADIUS = 200;
+	private final static int RIM_RADIUS = 500;
 	private final static int DROP_DISTANCE = 5;
+	private final static boolean ENABLE_ANTI_ALIASING = true;
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Crystal 2D");
@@ -39,7 +39,7 @@ public class Crystal2D {
 		int numberOfParticles = 1;
 		boolean crystalTouchingRim = false;
 		while (!crystalTouchingRim) {
-			Particle p = c.new Particle(crystal.getDropRadius());
+			Particle p = c.new Particle(crystal.getDropRadius(), RIM_RADIUS);
 			if (DEBUG) {
 				cp.setParticle(p);
 				cp.repaint();
@@ -88,7 +88,7 @@ public class Crystal2D {
 		public void paintComponent(Graphics g) {
 			g.setColor(Color.BLACK);
 			g.drawArc(0, 0, this.side - 1, this.side - 1, 0, 360);
-			//g.setColor(Color.GREEN);
+
 			for (int y = 0; y < this.side; y++) {
 				for (int x = 0; x < this.side; x++) {
 					if (this.matrix[y][x]) {
@@ -96,6 +96,7 @@ public class Crystal2D {
 					}
 				}
 			}
+
 			if (DEBUG) {
 				g.setColor(Color.RED);
 				if (this.p != (Particle)null) {
@@ -104,8 +105,35 @@ public class Crystal2D {
 				}
 				g.setColor(Color.BLACK);
 			}
+
+			if (ENABLE_ANTI_ALIASING) {
+				// Apply anti-aliasing.
+				g.setColor(new Color(0.8f, 0.8f, 0.8f, 1.0f));
+				for (int y = 1; y < this.side; y++) {
+					for (int x = 1; x < this.side; x++) {
+						if (this.matrix[y][x]) {
+							if (this.matrix[y - 1][x - 1]) {
+								if (!this.matrix[y][x - 1]) {
+									g.drawLine(x - 1, y, x - 1, y);
+								}
+								if (!this.matrix[y - 1][x]) {
+									g.drawLine(x, y - 1, x, y - 1);
+								}
+							}
+							if ((x + 1) < this.side && this.matrix[y - 1][x + 1]) {
+								if (!this.matrix[y][x + 1]) {
+									g.drawLine(x + 1, y, x + 1, y);
+								}
+								if (!this.matrix[y - 1][x]) {
+									g.drawLine(x, y - 1, x, y - 1);
+								}
+							}
+						}
+					}
+				}
+			}
 		}
-		
+
 		public void setParticle(Particle p) {
 			this.p = p;
 		}
@@ -199,7 +227,6 @@ public class Crystal2D {
 		}
 
 		public int getDropRadius() {
-			//System.out.print(this.currentRadius); System.out.print(" "); System.out.println(Math.min(this.currentRadius + DROP_DISTANCE, this.radius));
 			return Math.min(this.currentRadius + DROP_DISTANCE, this.radius);
 		}
 	}
@@ -213,10 +240,10 @@ public class Crystal2D {
 			{-1, -1}, {0, -1}, {1, -1}
 		};
 
-		public Particle(int radius) {
+		public Particle(int radius, int translation) {
 			double angle = Math.random() * 2 * Math.PI; // Angle between 0 and 2 PI.
-			this.x = (int)(Math.cos(angle) * radius) + RIM_RADIUS;
-			this.y = (int)(Math.sin(angle) * radius) + RIM_RADIUS;
+			this.x = (int)(Math.cos(angle) * radius) + translation;
+			this.y = (int)(Math.sin(angle) * radius) + translation;
 		}
 
 		public int getX() {
