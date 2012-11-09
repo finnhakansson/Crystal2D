@@ -11,9 +11,11 @@
 //
 
 import java.awt.*;
+import java.io.*;
 import javax.swing.*;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import finnhakansson.*;
 
 public class Crystal2D {
 	private final static boolean DEBUG = false;
@@ -68,7 +70,43 @@ public class Crystal2D {
 		}
 		cp.repaint();
 		System.out.println(numberOfParticles);
-		System.out.println("Done.");
+		System.out.println("Generation complete.");
+		System.out.println("Creating BMP image...");
+		byte[] BMPHeader = BmpFile.CreateBitMapFileHeader(crystal.getWidth(), crystal.getHeight());
+		byte[] BMPInfoHeader = BmpFile.CreateBitMapInfoHeader(crystal.getWidth(), crystal.getHeight());
+        String filename = "/Users/karin/Desktop/crystal_01.bmp";
+        File f = new File(filename);
+        try {
+            // Create an output stream to the file.
+            FileOutputStream file_output = new FileOutputStream(f);
+            // Wrap the FileOutputStream with a DataOutputStream
+            DataOutputStream data_out = new DataOutputStream(file_output);
+
+            data_out.write(BMPHeader, 0, BMPHeader.length);
+            data_out.write(BMPInfoHeader, 0, BMPInfoHeader.length);
+
+            boolean[][] matrix = crystal.getMatrix();
+            byte[] buf = new byte[3];
+            for (int y = 0; y < crystal.getHeight(); y++) {
+                for (int x = 0; x < crystal.getWidth(); x++) {
+                	byte r = 0;
+                    byte g = 0;
+                    byte b = 0;
+                    if (matrix[y][x]) {
+                    	r = (byte)0xff;
+                    	g = (byte)0xff;
+                    }
+                    buf[0] = b;
+                    buf[1] = g;
+                    buf[2] = r;
+                	data_out.write(buf, 0, buf.length);
+                }
+            }
+            file_output.close();
+        } catch (IOException e) {
+            System.out.println("IO exception = " + e );
+        }
+        System.out.println("Done.");
 	}
 
 	class CrystalPane extends JComponent {
@@ -82,6 +120,7 @@ public class Crystal2D {
 		public CrystalPane(int side) {
 			this.side = side;
 			this.p = (Particle)null;
+			//this.color = Color.RED;
 			this.color = new Color(0.9f, 0.9f, 0.1f, 1.0f);
 			this.antiAliasColor = new Color(0.1f, 0.1f, 0.01f, 1.0f);
 		}
@@ -174,12 +213,14 @@ public class Crystal2D {
 
 		public void initCrystalOneAtomMiddle() {
 			this.matrix[this.middleY][this.middleX] = true;
-
-			// Experiment with more points.
-			//this.matrix[this.middleY - 40][this.middleX - 40] = true;
-			//this.matrix[this.middleY - 40][this.middleX + 40] = true;
-			//this.matrix[this.middleY + 40][this.middleX - 40] = true;
-			//this.matrix[this.middleY + 40][this.middleX + 40] = true;
+		}
+		
+		public int getWidth() {
+			return this.width;
+		}
+		
+		public int getHeight() {
+			return this.height;
 		}
 
 		public boolean near(Crystal2D.Particle p) {
