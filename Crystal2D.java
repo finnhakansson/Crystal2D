@@ -15,6 +15,8 @@ import java.io.*;
 import javax.swing.*;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import finnhakansson.*;
 
 public class Crystal2D {
@@ -22,8 +24,26 @@ public class Crystal2D {
 	private final static int TITLE_HEIGHT = 22;
 	private final static int RIM_RADIUS = 300;
 	private final static int DROP_DISTANCE = 5;
-	private final static boolean ENABLE_ANTI_ALIASING = true;
-	private final static boolean DRAW_RIM = false;
+	private final static boolean ENABLE_ANTI_ALIASING = false;
+	private final static boolean DRAW_RIM = true;
+	private final static boolean CREATE_BMP_FILE = false;
+	private final static boolean CREATE_PNG_FILE = true;
+	private static boolean CRAZY_FIX = false;
+	
+	private static void printComponent(Component c, String format, String filename) throws IOException {
+		// Create a renderable image with the same width and height as the component
+		BufferedImage image = new BufferedImage(c.getWidth(), c.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		System.out.println("The width is " + c.getWidth());
+
+		// Render the component and all its sub components
+		c.paintAll(image.getGraphics());
+
+		// Render the component and ignoring its sub components
+		//c.paint(image.getGraphics());
+
+		// Save the image out to file
+		ImageIO.write(image, format, new File(filename));
+	}
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Crystal 2D");
@@ -69,43 +89,76 @@ public class Crystal2D {
 			} while (particleIsFree);
 		}
 		cp.repaint();
-		System.out.println(numberOfParticles);
+		System.out.println("Crystal with " + numberOfParticles + " particles.");
 		System.out.println("Generation complete.");
-		System.out.println("Creating BMP image...");
-		byte[] BMPHeader = BmpFile.CreateBitMapFileHeader(crystal.getWidth(), crystal.getHeight());
-		byte[] BMPInfoHeader = BmpFile.CreateBitMapInfoHeader(crystal.getWidth(), crystal.getHeight());
-        String filename = "/Users/karin/Desktop/crystal_01.bmp";
-        File f = new File(filename);
-        try {
-            // Create an output stream to the file.
-            FileOutputStream file_output = new FileOutputStream(f);
-            // Wrap the FileOutputStream with a DataOutputStream
-            DataOutputStream data_out = new DataOutputStream(file_output);
 
-            data_out.write(BMPHeader, 0, BMPHeader.length);
-            data_out.write(BMPInfoHeader, 0, BMPInfoHeader.length);
+		if (DEBUG) {
+			String[] formats = ImageIO.getWriterFormatNames();
+			for (int index = 0; index < formats.length; index++) {
+				System.out.println(formats[index]);
+			}
+		}
 
-            boolean[][] matrix = crystal.getMatrix();
-            byte[] buf = new byte[3];
-            for (int y = 0; y < crystal.getHeight(); y++) {
-                for (int x = 0; x < crystal.getWidth(); x++) {
-                	byte r = 0;
-                    byte g = 0;
-                    byte b = 0;
-                    if (matrix[y][x]) {
-                    	r = (byte)0xff;
-                    	g = (byte)0xff;
-                    }
-                    buf[0] = b;
-                    buf[1] = g;
-                    buf[2] = r;
-                	data_out.write(buf, 0, buf.length);
-                }
-            }
-            file_output.close();
-        } catch (IOException e) {
-            System.out.println("IO exception = " + e );
-        }
+		if (CREATE_PNG_FILE) {
+			String pngFileName = "/Users/karin/Desktop/crystal_05.png";
+			System.out.println("Creating PNG file \"" + pngFileName + "\".");
+			CRAZY_FIX = true;
+			try {
+				BufferedImage image = new BufferedImage(cp.getWidth(), cp.getHeight(), BufferedImage.TYPE_INT_RGB);
+				//cp.paintAll(image.getGraphics());
+				Graphics g = image.createGraphics();
+				cp.paintComponent(g);
+				//frame.paintComponents(g);
+				//cp.repaint();
+				//g.dispose();
+				ImageIO.write(image, "png", new File(pngFileName));
+				//Crystal2D.printComponent(cp, "png", "/Users/karin/Desktop/crystal_03.png");
+			} catch (IOException e) {
+				System.out.println("Failed to write PNG image: IOException: " + e );
+				e.printStackTrace();
+			}
+			System.out.println("Done creating PNG file.");
+		}
+
+		if (CREATE_BMP_FILE) {
+			String filename = "/Users/karin/Desktop/crystal_05.bmp";
+			System.out.println("Creating BMP file \"" + filename + "\".");
+			byte[] BMPHeader = BmpFile.CreateBitMapFileHeader(crystal.getWidth(), crystal.getHeight());
+			byte[] BMPInfoHeader = BmpFile.CreateBitMapInfoHeader(crystal.getWidth(), crystal.getHeight());
+			File f = new File(filename);
+			try {
+				// Create an output stream to the file.
+				FileOutputStream file_output = new FileOutputStream(f);
+				// Wrap the FileOutputStream with a DataOutputStream
+				DataOutputStream data_out = new DataOutputStream(file_output);
+
+				data_out.write(BMPHeader, 0, BMPHeader.length);
+				data_out.write(BMPInfoHeader, 0, BMPInfoHeader.length);
+
+				boolean[][] matrix = crystal.getMatrix();
+				byte[] buf = new byte[3];
+				for (int y = 0; y < crystal.getHeight(); y++) {
+					for (int x = 0; x < crystal.getWidth(); x++) {
+						byte r = 0;
+						byte g = 0;
+						byte b = 0;
+						if (matrix[y][x]) {
+							r = (byte)0xff;
+							g = (byte)0xff;
+						}
+						buf[0] = b;
+						buf[1] = g;
+						buf[2] = r;
+						data_out.write(buf, 0, buf.length);
+					}
+				}
+				file_output.close();
+			} catch (IOException e) {
+				System.out.println("IO exception = " + e );
+				e.printStackTrace();
+			}
+		}
+
         System.out.println("Done.");
 	}
 
@@ -120,7 +173,6 @@ public class Crystal2D {
 		public CrystalPane(int side) {
 			this.side = side;
 			this.p = (Particle)null;
-			//this.color = Color.RED;
 			this.color = new Color(0.9f, 0.9f, 0.1f, 1.0f);
 			this.antiAliasColor = new Color(0.1f, 0.1f, 0.01f, 1.0f);
 		}
@@ -130,6 +182,9 @@ public class Crystal2D {
 		}
 
 		public void paintComponent(Graphics g) {
+			g.setColor(Color.BLACK);
+
+			g.fillRect(0, 0, this.getWidth(), this.getHeight());
 			g.setColor(this.color);
 
 			if (DRAW_RIM) {
@@ -139,7 +194,12 @@ public class Crystal2D {
 			for (int y = 0; y < this.side; y++) {
 				for (int x = 0; x < this.side; x++) {
 					if (this.matrix[y][x]) {
-						g.drawLine(x, y, x, y);
+						if (CRAZY_FIX) {
+							System.out.println("Drawing line at [" + x + ", " + y + "].");
+							g.drawLine(x, y, x+1, y+1);
+						} else {
+						    g.drawLine(x, y, x, y);
+						}
 					}
 				}
 			}
