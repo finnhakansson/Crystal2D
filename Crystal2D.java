@@ -5,14 +5,12 @@
 // Optimize the drawing. Is it possible to render only a small part of the pane?
 // Threads? Many concurrent particles?
 // Draw more than one point at once with drawLine().
-// Export to BMP file.
 // Only repaint after every 100 particles. Grow exponentially.
 // Statistics.
 //
 
 import java.awt.*;
 import java.io.*;
-import javax.swing.*;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import java.awt.image.BufferedImage;
@@ -24,26 +22,12 @@ public class Crystal2D {
 	private final static int TITLE_HEIGHT = 22;
 	private final static int RIM_RADIUS = 300;
 	private final static int DROP_DISTANCE = 5;
-	private final static boolean ENABLE_ANTI_ALIASING = false;
-	private final static boolean DRAW_RIM = true;
+	private final static boolean ENABLE_ANTI_ALIASING = true;
+	private final static boolean DRAW_RIM = false;
 	private final static boolean CREATE_BMP_FILE = false;
 	private final static boolean CREATE_PNG_FILE = true;
-	private static boolean CRAZY_FIX = false;
-	
-	private static void printComponent(Component c, String format, String filename) throws IOException {
-		// Create a renderable image with the same width and height as the component
-		BufferedImage image = new BufferedImage(c.getWidth(), c.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		System.out.println("The width is " + c.getWidth());
+	private static boolean buildingComplete = false;
 
-		// Render the component and all its sub components
-		c.paintAll(image.getGraphics());
-
-		// Render the component and ignoring its sub components
-		//c.paint(image.getGraphics());
-
-		// Save the image out to file
-		ImageIO.write(image, format, new File(filename));
-	}
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Crystal 2D");
@@ -55,7 +39,7 @@ public class Crystal2D {
 		frame.getContentPane().add(cp);
 		frame.getContentPane().setBackground(Color.BLACK);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setSize(RIM_RADIUS * 2, RIM_RADIUS * 2 + TITLE_HEIGHT);
+		frame.setSize(RIM_RADIUS * 2 + 15, RIM_RADIUS * 2 + TITLE_HEIGHT + 15);
 		frame.setVisible(true);
 
 		int repaintLimit = 100;
@@ -91,6 +75,7 @@ public class Crystal2D {
 		cp.repaint();
 		System.out.println("Crystal with " + numberOfParticles + " particles.");
 		System.out.println("Generation complete.");
+		buildingComplete = true;
 
 		if (DEBUG) {
 			String[] formats = ImageIO.getWriterFormatNames();
@@ -100,24 +85,18 @@ public class Crystal2D {
 		}
 
 		if (CREATE_PNG_FILE) {
-			String pngFileName = "/Users/karin/Desktop/crystal_05.png";
+			String pngFileName = "/tmp/crystal_05.png";
 			System.out.println("Creating PNG file \"" + pngFileName + "\".");
-			CRAZY_FIX = true;
 			try {
-				BufferedImage image = new BufferedImage(cp.getWidth(), cp.getHeight(), BufferedImage.TYPE_INT_RGB);
-				//cp.paintAll(image.getGraphics());
+				BufferedImage image = new BufferedImage(cp.getWidth(), cp.getHeight(), BufferedImage.TYPE_INT_ARGB);
 				Graphics g = image.createGraphics();
 				cp.paintComponent(g);
-				//frame.paintComponents(g);
-				//cp.repaint();
-				//g.dispose();
 				ImageIO.write(image, "png", new File(pngFileName));
-				//Crystal2D.printComponent(cp, "png", "/Users/karin/Desktop/crystal_03.png");
 			} catch (IOException e) {
 				System.out.println("Failed to write PNG image: IOException: " + e );
 				e.printStackTrace();
 			}
-			System.out.println("Done creating PNG file.");
+			//System.out.println("Done creating PNG file.");
 		}
 
 		if (CREATE_BMP_FILE) {
@@ -173,10 +152,10 @@ public class Crystal2D {
 		public CrystalPane(int side) {
 			this.side = side;
 			this.p = (Particle)null;
-			this.color = new Color(0.9f, 0.9f, 0.1f, 1.0f);
+			this.color = new Color(1.0f, 1.0f, 0.1f, 1.0f);
 			this.antiAliasColor = new Color(0.1f, 0.1f, 0.01f, 1.0f);
 		}
-		
+
 		public void setMatrix(boolean[][] matrix) {
 			this.matrix = matrix;
 		}
@@ -194,12 +173,7 @@ public class Crystal2D {
 			for (int y = 0; y < this.side; y++) {
 				for (int x = 0; x < this.side; x++) {
 					if (this.matrix[y][x]) {
-						if (CRAZY_FIX) {
-							System.out.println("Drawing line at [" + x + ", " + y + "].");
-							g.drawLine(x, y, x+1, y+1);
-						} else {
-						    g.drawLine(x, y, x, y);
-						}
+						g.drawLine(x, y, x, y);
 					}
 				}
 			}
@@ -212,7 +186,7 @@ public class Crystal2D {
 				g.setColor(Color.BLACK);
 			}
 
-			if (ENABLE_ANTI_ALIASING) {
+			if (ENABLE_ANTI_ALIASING && buildingComplete) {
 				// Apply anti-aliasing.
 				g.setColor(this.antiAliasColor);
 				for (int y = 1; y < this.side; y++) {
@@ -362,7 +336,7 @@ public class Crystal2D {
 		public int getX() {
 			return this.x;
 		}
-		
+
 		public int getY() {
 			return this.y;
 		}
